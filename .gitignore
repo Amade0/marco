@@ -87,4 +87,8 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# marco files that should not be tracked by git
 marco_db.pickle
+discord_api_token.txt
+discord_blacklist.psv

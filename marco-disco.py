@@ -3,9 +3,9 @@
 
 import discord
 import asyncio
-# from discord.ext import commands
 import random
 import datetime, threading
+import os.path
 from marco import marco
 
 client = discord.Client()
@@ -15,7 +15,10 @@ async def on_ready():
     """Initialize the marco module."""
     client.markov = marco()
     client.idle = False
-    client.blacklisted_channels = []
+    if os.path.isfile('./discord_blacklist.psv'):
+        client.blacklisted_channels = open('./discord_blacklist.psv').read()
+    else:
+        client.blacklisted_channels = ''
     print('Logged in as ' + client.user.display_name)
 
 @client.event
@@ -24,6 +27,8 @@ async def on_message(message):
     creating output.
     """
     text = message.clean_content
+    channel = message.channel
+    channel_id = '(' + str(channel.id) + ')'
     if message.author != client.user:
         print('<<< ' + text)
     if client.idle != client.markov.silent:
@@ -38,36 +43,39 @@ async def on_message(message):
         command = words[0]
         command = command[1:]
         # discord-specific commands
-        if command == 'blacklist' and not message.channel.is_private:
-            channel_id = message.channel.id
+        if command == 'blacklist' and not channel.is_private:
             if channel_id not in client.blacklisted_channels:
-                client.blacklisted_channels.append(channel_id)
+                client.blacklisted_channels = (
+                        client.blacklisted_channels + channel_id
+                        )
                 await output(message.channel, (
                     'Channel blacklisted.'
                     ))
+                save_blacklist()
             else:
                 await output(message.channel, (
                     'This channel is already blacklisted.'
                     ))
             return
         elif command == 'whitelist' and not channel.is_private:
-            channel_id = channel.id
             if channel_id in client.blacklisted_channels:
-                client.blacklisted_channels.remove(channel_id)
+                client.blacklisted_channels = (
+                    client.blacklisted_channels.replace(channel_id, '')
+                    )
                 await output(message.channel, (
                     'Channel removed from blacklist.'
                     ))
+                save_blacklist()
             else:
                 await output(message.channel, (
                     'This channel is not blacklisted.'
                     ))
             return
         args = ' '.join(words[1:])
-        silent_temp = client.markov.silent
         result = client.markov.command(command, args)
         await output(message.channel, result)
         return
-    if message.channel in client.blacklisted_channels:
+    if channel.id in client.blacklisted_channels:
         return
     # replace bot mentions with the $you control signal
     text = text.replace('@' + client.user.display_name, '$you')
@@ -80,12 +88,12 @@ async def on_message(message):
                 if mention == client.user:
                     result = client.markov.output()
         # always respond to private messages
-        elif message.channel.is_private:
+        elif channel.is_private:
             result = client.markov.output()
     if result:
         # replace $you control signals with the name of the respondee
         result = result.replace('$you', '@' + message.author.display_name)
-        await output(message.channel, result)
+        await output(channel, result)
 
 async def output(channel, string):
     """Output the given message to the given channel.
@@ -100,6 +108,13 @@ async def output(channel, string):
     await asyncio.sleep(len(string) / 50)
     print('>>> ' + string)
     await client.send_message(channel, string)
+
+def save_blacklist():
+    """Save the blacklist to discord_blacklist.psv."""
+    blacklist = client.blacklisted_channels
+    blacklist_file = open('./discord_blacklist.psv', 'w')
+    blacklist_file.write(blacklist)
+    blacklist_file.close()
 
 # Run the client.
 token = open('./discord_api_token.txt').read()

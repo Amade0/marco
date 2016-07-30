@@ -104,6 +104,9 @@ class marco:
         if command == 'on':
             self.on()
             return 'reactivating.';
+        if command == 'unlearn':
+            self.markov.unparse(args)
+            return 'Unlearned provided message.'
 
     def __strToNum(self, string):
         """Convert a string to a number. Return False if the conversion fails.
