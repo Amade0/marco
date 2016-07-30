@@ -10,7 +10,7 @@ from Markov import Markov
 
 class marco:
 
-    def __init__(self, file_name='./marco_db.pickle', chat_freq=0.15):
+    def __init__(self, file_name='./marco_db.pickle', chat_freq=0.1):
         """Load a Markov from file or create a new Markov as necessary.
         Initialize the response frequency and begin the autosave schedule.
 
@@ -79,24 +79,35 @@ class marco:
                         '!output immediately produces a line of output from '
                         'the bot.'
                         )
+                elif args == 'unlearn':
+                    return (
+                        '!unlearn reverses the learning process on the '
+                        'provided message, removing it from the database.'
+                        )
+                elif args == 'freq':
+                    return (
+                        '!freq adjusts the spontaneous response rate '
+                        'percentage, which is 15% by default.'
+                        )
             return (
                 'I am a markov chain bot created by lemon. I understand the '
-                'following commands: !ping !help !off !on !output. Use !help '
-                'commandname for more information about a command.'
+                'following commands: !ping !help !off !on !output !unlearn '
+                '!freq. Use !help commandname for more information about a '
+                'command.'
                 )
         if command == 'off':
             if args:
                 args = self.__strToNum(args)
-                if args == False:
-                    return (
-                        '!off only takes a positive integer as an argument. '
-                        '(no action taken)'
-                        )
-                else:
+                if args:
                     self.off(args)
                     return (
                         'deactivating for ' + str(args) + ' minutes (use !on '
                         'to reactivate immediately)'
+                        )
+                else:
+                    return (
+                        '!off only takes a positive integer as an argument. '
+                        '(no action taken)'
                         )
             else:
                 self.off()
@@ -107,6 +118,24 @@ class marco:
         if command == 'unlearn':
             self.markov.unparse(args)
             return 'Unlearned provided message.'
+        if command == 'freq' or command == 'frequency':
+            if args:
+                args = self.__strToNum(args)
+                if args and args < 100:
+                    self.set_chat_freq(args)
+                    return (
+                        'Response frequency changed to ' + str(args) + '%.'
+                        )
+                else:
+                    return (
+                        '!freq requires a positive integer less than 100 as '
+                        'an argument. (no action taken)'
+                        )
+            else:
+                return (
+                    'Current spontaneous response frequency is '
+                    + str(self.chat_freq * 100) + '%.'
+                    )
 
     def __strToNum(self, string):
         """Convert a string to a number. Return False if the conversion fails.
@@ -120,7 +149,7 @@ class marco:
             return False
 
     def off(self, time = 0):
-        """Deactivate, temporarily disabling the simultaneous response feature.
+        """Deactivate, temporarily disabling the spontaneous response feature.
 
         Keyword arguments:
         time -- The number of minutes to deactivate for (0 for until
@@ -135,7 +164,7 @@ class marco:
         self.silent = False
 
     def input(self, message):
-        """Passes input to the Markov chain. May generate a simultaneous
+        """Passes input to the Markov chain. May generate a spontaneous
         response.
         """
         self.markov.parse(message)
@@ -145,3 +174,7 @@ class marco:
     def output(self):
         """Generates an output message from the Markov chain."""
         return self.markov.output()
+
+    def set_chat_freq(rate):
+        self.chat_freq = self.__strToNum(rate / 100)
+

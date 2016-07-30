@@ -29,12 +29,13 @@ async def on_message(message):
     text = message.clean_content
     channel = message.channel
     channel_id = '(' + str(channel.id) + ')'
-    if message.author != client.user:
-        print('<<< ' + text)
+    # if message.author != client.user:
+        # print('<<< ' + text)
     if client.idle != client.markov.silent:
         # silent state changed, update status
-        await client.change_status(idle = client.markov.silent)
-    if message.author.bot or client.markov.silent:
+        client.idle = client.markov.silent
+        await client.change_status(client.idle)
+    if message.author.bot:
         # ignore bots: we don't want to parse our own output, and we also don't
         # want to start feedback loops with other bots
         return
@@ -75,7 +76,7 @@ async def on_message(message):
         result = client.markov.command(command, args)
         await output(message.channel, result)
         return
-    if channel.id in client.blacklisted_channels:
+    if channel.id in client.blacklisted_channels or client.markov.silent:
         return
     # replace bot mentions with the $you control signal
     text = text.replace('@' + client.user.display_name, '$you')
@@ -106,7 +107,7 @@ async def output(channel, string):
         return
     await client.send_typing(channel)
     await asyncio.sleep(len(string) / 50)
-    print('>>> ' + string)
+    # print('>>> ' + string)
     await client.send_message(channel, string)
 
 def save_blacklist():
@@ -119,3 +120,4 @@ def save_blacklist():
 # Run the client.
 token = open('./discord_api_token.txt').read()
 client.run(token)
+
