@@ -175,6 +175,6 @@ class marco:
         """Generates an output message from the Markov chain."""
         return self.markov.output()
 
-    def set_chat_freq(rate):
-        self.chat_freq = self.__strToNum(rate / 100)
+    def set_chat_freq(self, rate):
+        self.chat_freq = rate / 100
 

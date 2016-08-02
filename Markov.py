@@ -47,7 +47,7 @@ class Markov(object):
             w1 = self.__strip_control_signals(w1)
             w2 = self.__strip_control_signals(w2)
             key = (w1, w2)
-            if key in self.database:
+            if key in self.database and w3 in self.database[key]:
                 self.database[key].remove(w3)
                 if not self.database[key]:
                     del self.database[key]
